@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "719194535923",
+    "firebase_url": "https://bazaar-at-your-dwaar.firebaseio.com",
+    "project_id": "bazaar-at-your-dwaar",
+    "storage_bucket": "bazaar-at-your-dwaar.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:719194535923:android:701268f58492ec09014486",
+        "android_client_info": {
+          "package_name": "com.suvidha.bazaaratyourdwaar"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "719194535923-m1kkma6qi5a72k6g41ulptii57h6dql3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCbU1YrP1CMYMFchNeRtMgide14fjvhb4s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "719194535923-m1kkma6qi5a72k6g41ulptii57h6dql3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

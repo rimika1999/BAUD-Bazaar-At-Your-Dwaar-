@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    android:orientation="vertical"
+    xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <TextView
+        android:padding="12dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Look uber stylish and trendy by wearing this handbag for women from Nevis. Made from Synthetic Leather (pu), this handbag is capacious and perfect for keeping your everyday essentials. Pair this bag with casuals of your liking to look smart. Sling Bag Strap Type:Adjustable Strap AND Strap is Only One And Use product (smal sling bag)"/>
+</LinearLayout>

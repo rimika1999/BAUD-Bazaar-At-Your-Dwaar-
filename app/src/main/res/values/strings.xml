@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">Bazaar At Your Dwaar</string>
+    <string-array name="categories">
+        <item>Apparels</item>
+        <item>Consumer Electronics</item>
+        <item>Footwear</item>
+        <item>Food, Health &amp; Beauty Supplements</item>
+        <item>Jewellery</item>
+        <item>Books</item>
+        <item>Mobile Phones</item>
+        <item>Fashion Accessories</item>
+        <item>Home Decor Items</item>
+        <item>Kitchen Ware and Household Appliances</item>
+        <item>Toys and games</item>
+        <item>Sports good and Fitness Equipment</item>
+        <item>Baby Care Products</item>
+        <item>Computer Hardware, Software, and Accessories</item>
+    </string-array>
+</resources>
