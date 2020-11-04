@@ -34,11 +34,6 @@ public class Profile extends AppCompatActivity implements View.OnClickListener{
     Context context=this;
     LinearLayout layoutId;
 
-    SharedPreferences sp;
-    private static final String sharedPref = "sharedPreference_name";
-    private static final String sp_key = "shared_key_value";
-
-
     @Override
     protected void onCreate( @Nullable Bundle savedInstanceState ) {
         super.onCreate(savedInstanceState);
@@ -127,8 +122,9 @@ public class Profile extends AppCompatActivity implements View.OnClickListener{
             case R.id.update_profile_button:
             {
                 UpdateProfile();
-                sp = getSharedPreferences(sharedPref, MODE_PRIVATE);
-                String user_id_Key = sp.getString(sp_key,"");
+                SharedPreferences sp;
+                sp = getSharedPreferences(Constants.sharedPref, MODE_PRIVATE);
+                String user_id_Key = sp.getString(Constants.sp_key,"");
 
                 return;
             }

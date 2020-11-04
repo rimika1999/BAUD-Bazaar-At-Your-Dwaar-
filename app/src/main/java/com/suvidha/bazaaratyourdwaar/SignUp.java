@@ -40,8 +40,6 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
     private PhoneAuthProvider.OnVerificationStateChangedCallbacks mCallBacks;
 
     SharedPreferences sp;
-    private static final String sharedPref = "sharedPreference_name";
-    private static final String sp_key = "shared_key_value";
 
     TextView textView_login;
     Context context = this;
@@ -74,7 +72,7 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
         confirmPassword = findViewById(R.id.signup_et_confirmPassword);
         layoutId = findViewById(R.id.signUp_layoutId);
 
-        sp = getSharedPreferences(sharedPref,context.MODE_PRIVATE);
+        sp = getSharedPreferences(Constants.sharedPref,context.MODE_PRIVATE);
 
         textView_login.setOnClickListener(this);
         imageView_back.setOnClickListener(this);
@@ -337,10 +335,10 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
                     UserDatabase.child("Users").child(userIdentification_key).setValue(user_helperclass);
 
                     SharedPreferences.Editor sp_editor = sp.edit();
-                    sp_editor.putString(sp_key,userIdentification_key);
+                    sp_editor.putString(Constants.sp_key,userIdentification_key);
                     sp_editor.commit();
 
-                    HelperClass_Profile user_profileDB = new HelperClass_Profile(null,null,null,null,null,null,null,userIdentification_key);
+                    HelperClass_Profile user_profileDB = new HelperClass_Profile(userIdentification_key,null,null,null,null,null,null,null);
                     UserDatabase.child("UserProfile").push().setValue(user_profileDB);
 
                 }

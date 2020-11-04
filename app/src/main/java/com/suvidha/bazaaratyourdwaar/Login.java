@@ -150,6 +150,13 @@ public class Login extends AppCompatActivity implements View.OnClickListener{
                         userFound=true;
                         break;
                     }
+                    else if(dbusername.equals(userId) || dbpassword.equals(hash_password))
+                    {
+                        LinearLayout linearLayout = findViewById(R.id.login_layoutID);
+                        dialog_progress.dismiss();
+                        Snackbar.make(linearLayout,"Username or password is incorrect",Snackbar.LENGTH_LONG).show();
+                        return;
+                    }
                 }
 
                 dialog_progress.dismiss();

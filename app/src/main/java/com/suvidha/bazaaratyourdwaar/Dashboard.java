@@ -1,13 +1,16 @@
 package com.suvidha.bazaaratyourdwaar;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityOptionsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -17,6 +20,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.material.tabs.TabLayout;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -40,6 +48,8 @@ public class Dashboard extends AppCompatActivity {
         recyclerView_categories = findViewById(R.id.dashboard_rv_categories);
         textView_deal_of_the_day_time_left = findViewById(R.id.dashboard_tv_deal_time_left);
         cardView_search_products = findViewById(R.id.dashboard_card_searchproducts);
+
+        completeProfile_check();
 
         //calculateDealTime();
 
@@ -127,6 +137,58 @@ public class Dashboard extends AppCompatActivity {
         });
 
 
+    }
+
+    private void completeProfile_check()
+    {
+        SharedPreferences sp;
+        sp = getSharedPreferences(Constants.sharedPref, MODE_PRIVATE);
+        final String user_id_Key = sp.getString(Constants.sp_key,"");
+
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("UserProfile");
+        ref.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange( @NonNull DataSnapshot snapshot ) {
+
+                for(DataSnapshot dataSnapshot : snapshot.getChildren())
+                {
+                    String userIdKey = dataSnapshot.child("identificationKey").getValue(String.class);
+                    if(userIdKey.equals(user_id_Key))
+                    {
+                        String name = dataSnapshot.child("name").getValue(String.class);
+                        if(name==null)
+                        {
+                            //dialog for profile completion
+                            Dialog dialog_profile_completion = new Dialog(context);
+                            dialog_profile_completion.setContentView(R.layout.activity_profile_completion_dialog);
+
+                            Button edit_profile;
+                            edit_profile = dialog_profile_completion.findViewById(R.id.editProfile_button);
+
+                            edit_profile.setOnClickListener(new View.OnClickListener() {
+                                @Override
+                                public void onClick( View v ) {
+                                    startActivity(new Intent(context,Profile.class));
+                                    finish();
+                                }
+                            });
+                            dialog_profile_completion.show();
+
+                        }
+                        else
+                        {
+                            return;
+                        }
+                    }
+
+                }
+            }
+
+            @Override
+            public void onCancelled( @NonNull DatabaseError error ) {
+
+            }
+        });
     }
 
     private void refresh()
