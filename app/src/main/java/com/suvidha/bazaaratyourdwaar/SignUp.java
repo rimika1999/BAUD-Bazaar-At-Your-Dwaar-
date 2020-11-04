@@ -4,14 +4,11 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.Dialog;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
-import android.os.CountDownTimer;
-import android.os.Handler;
-import android.service.autofill.UserData;
 import android.util.Log;
 import android.util.Patterns;
 import android.view.View;
@@ -19,11 +16,9 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import java.security.MessageDigest;
-import java.security.*;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -34,17 +29,19 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.PhoneAuthCredential;
 import com.google.firebase.auth.PhoneAuthProvider;
-import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.TimeUnit;
 
 public class SignUp extends AppCompatActivity implements View.OnClickListener{
 
     private PhoneAuthProvider.OnVerificationStateChangedCallbacks mCallBacks;
+
+    SharedPreferences sp;
+    private static final String sharedPref = "sharedPreference_name";
+    private static final String sp_key = "shared_key_value";
 
     TextView textView_login;
     Context context = this;
@@ -69,7 +66,7 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
         mAuth = FirebaseAuth.getInstance();
 
         textView_login = findViewById(R.id.signup_tv_login);
-        imageView_back = findViewById(R.id.signup_iv_back);
+        imageView_back = findViewById(R.id.profile_iv_back);
         signUp_button = findViewById(R.id.signUp_button);
         email = findViewById(R.id.signup_et_email);
         username = findViewById(R.id.signup_et_username);
@@ -77,7 +74,7 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
         confirmPassword = findViewById(R.id.signup_et_confirmPassword);
         layoutId = findViewById(R.id.signUp_layoutId);
 
-
+        sp = getSharedPreferences(sharedPref,context.MODE_PRIVATE);
 
         textView_login.setOnClickListener(this);
         imageView_back.setOnClickListener(this);
@@ -299,7 +296,7 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
     public void onClick(View view) {
         switch (view.getId())
         {
-            case R.id.signup_iv_back:
+            case R.id.profile_iv_back:
             {
                 finish();
                 break;
@@ -330,13 +327,21 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
                         e.printStackTrace();
                     }
 
+
                     UserDatabase = FirebaseDatabase.getInstance().getReference();
                     /*FirebaseUser User=mAuth.getCurrentUser();
                     if(User.isEmailVerified());*/
 
                     userIdentification_key=UserDatabase.child("Users").push().getKey();
                     HelperClass_User user_helperclass = new HelperClass_User(Username, Email, encodedPass,userIdentification_key);
-                    UserDatabase.child(userIdentification_key).setValue(user_helperclass);
+                    UserDatabase.child("Users").child(userIdentification_key).setValue(user_helperclass);
+
+                    SharedPreferences.Editor sp_editor = sp.edit();
+                    sp_editor.putString(sp_key,userIdentification_key);
+                    sp_editor.commit();
+
+                    HelperClass_Profile user_profileDB = new HelperClass_Profile(null,null,null,null,null,null,null,userIdentification_key);
+                    UserDatabase.child("UserProfile").push().setValue(user_profileDB);
 
                 }
                 break;
