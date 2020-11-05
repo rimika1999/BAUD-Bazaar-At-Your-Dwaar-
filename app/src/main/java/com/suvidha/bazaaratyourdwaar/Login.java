@@ -7,6 +7,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.util.Log;
@@ -55,6 +56,7 @@ public class Login extends AppCompatActivity implements View.OnClickListener{
     ImageView imageView_back;
     Dialog dialog_progress;
     LinearLayout layoutId;
+    SharedPreferences sp;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -160,9 +162,13 @@ public class Login extends AppCompatActivity implements View.OnClickListener{
                 }
 
                 dialog_progress.dismiss();
+
                 if(userFound)
                 {
-                    LinearLayout linearLayout = findViewById(R.id.login_layoutID);
+                    sp = getSharedPreferences(Constants.isLoggedin,context.MODE_PRIVATE);
+                    SharedPreferences.Editor sp_editor = sp.edit();
+                    sp_editor.putString(Constants.isLoggedin,"true");
+                    sp_editor.commit();
                     startActivity(new Intent(context,Dashboard.class));
                     finish();
                 }

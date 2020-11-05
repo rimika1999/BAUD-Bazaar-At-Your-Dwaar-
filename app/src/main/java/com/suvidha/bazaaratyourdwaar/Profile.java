@@ -1,5 +1,6 @@
 package com.suvidha.bazaaratyourdwaar;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -7,10 +8,12 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.Patterns;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -20,7 +23,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.material.snackbar.Snackbar;
+import com.google.android.material.textfield.TextInputLayout;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 
 public class Profile extends AppCompatActivity implements View.OnClickListener{
@@ -33,12 +44,14 @@ public class Profile extends AppCompatActivity implements View.OnClickListener{
     Dialog dialog_progress;
     Context context=this;
     LinearLayout layoutId;
+    TextView textView_name,textView_address,textView_email,textView_contact;
 
     @Override
     protected void onCreate( @Nullable Bundle savedInstanceState ) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+
 
         mauth = FirebaseAuth.getInstance();
         edit_name = findViewById(R.id.profile_et_fullname);
@@ -48,6 +61,11 @@ public class Profile extends AppCompatActivity implements View.OnClickListener{
         edit_pincode = findViewById(R.id.profile_et_pincode);
         edit_email = findViewById(R.id.profile_et_email);
         edit_phonenumber = findViewById(R.id.profile_et_phone_number);
+
+        textView_name = findViewById(R.id.textview_profile_username);
+        textView_address = findViewById(R.id.textview_profile_useraddress);
+        textView_email = findViewById(R.id.textview_profile_useremail);
+        textView_contact = findViewById(R.id.textview_profile_usercontact);
 
         imageview_back = findViewById(R.id.profile_iv_back);
         profile_button = findViewById(R.id.update_profile_button);
@@ -61,7 +79,7 @@ public class Profile extends AppCompatActivity implements View.OnClickListener{
     }
 
     private void UpdateProfile(){
-        String name,address,state,district,pincode,email,phonenumber;
+        final String name,address,state,district,pincode,email,phonenumber;
 
         name = edit_name.getText().toString().trim();
         address = edit_address.getText().toString().trim();
@@ -101,12 +119,68 @@ public class Profile extends AppCompatActivity implements View.OnClickListener{
             edit_email.setError("Field required");
             return;
         }
+        if(!Patterns.EMAIL_ADDRESS.matcher(email).matches())
+        {
+            edit_email.setError("Invalid input");
+            return;
+        }
         if(phonenumber.isEmpty())
         {
             edit_phonenumber.setError("Field required");
             return;
         }
-        //dialog_progress.show();
+        if(phonenumber.length()!=10)
+        {
+            edit_phonenumber.setError("Invalid input");
+            return;
+        }
+        dialog_progress.show();
+
+        SharedPreferences sp;
+        sp = getSharedPreferences(Constants.sharedPref, MODE_PRIVATE);
+        final String user_id_Key = sp.getString(Constants.sp_key,"");
+
+        final DatabaseReference refDatabase = FirebaseDatabase.getInstance().getReference("UserProfile");
+        refDatabase.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange( @NonNull DataSnapshot snapshot ) {
+
+                for(DataSnapshot datasnapshot : snapshot.getChildren())
+                {
+                    String id = datasnapshot.child("identificationKey").getValue(String.class);
+
+                    if(id.equals(user_id_Key))
+                    {
+                        dialog_progress.dismiss();
+                        String dbKey = datasnapshot.getKey();
+                        refDatabase.child(dbKey).child("name").setValue(name);
+                        refDatabase.child(dbKey).child("address").setValue(address);
+                        refDatabase.child(dbKey).child("district").setValue(district);
+                        refDatabase.child(dbKey).child("state").setValue(state);
+                        refDatabase.child(dbKey).child("pincode").setValue(pincode);
+                        refDatabase.child(dbKey).child("email").setValue(email);
+                        refDatabase.child(dbKey).child("phonenumber").setValue(phonenumber);
+
+                        textView_name.setText(name);
+                        textView_address.setText("Address:"+address+" "+district+" "+state+" "+pincode);
+                        textView_email.setText("Email:"+email);
+                        textView_contact.setText("Phone No:"+phonenumber);
+
+                        LinearLayout linearLayout = findViewById(R.id.profile_layout);
+                        Snackbar.make(linearLayout,"Profile Updated",Snackbar.LENGTH_LONG).show();
+                        break;
+                    }
+                }
+                dialog_progress.dismiss();
+                startActivity(new Intent(context,Dashboard.class));
+                finish();
+            }
+
+            @Override
+            public void onCancelled( @NonNull DatabaseError error ) {
+
+            }
+        });
 
     }
 
@@ -122,10 +196,6 @@ public class Profile extends AppCompatActivity implements View.OnClickListener{
             case R.id.update_profile_button:
             {
                 UpdateProfile();
-                SharedPreferences sp;
-                sp = getSharedPreferences(Constants.sharedPref, MODE_PRIVATE);
-                String user_id_Key = sp.getString(Constants.sp_key,"");
-
                 return;
             }
         }
