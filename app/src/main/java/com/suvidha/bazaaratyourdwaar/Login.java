@@ -9,43 +9,37 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
-import com.google.firebase.FirebaseException;
-import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.auth.PhoneAuthCredential;
 import com.google.firebase.auth.PhoneAuthProvider;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.concurrent.TimeUnit;
-
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 
 
 public class Login extends AppCompatActivity implements View.OnClickListener{
 
     private PhoneAuthProvider.OnVerificationStateChangedCallbacks mCallBacks;
+
 
     FirebaseAuth mAuth;
     TextInputEditText edit_username,edit_password;
@@ -54,9 +48,16 @@ public class Login extends AppCompatActivity implements View.OnClickListener{
     TextView textView_signup;
     Context context = this;
     ImageView imageView_back;
-    Dialog dialog_progress;
+    Dialog dialog_progress,dialog_noConnection;
     LinearLayout layoutId;
     SharedPreferences sp;
+    String datentime;
+
+    public boolean checkConnection() {
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        return connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).getState() == NetworkInfo.State.CONNECTED ||
+                connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI).getState() == NetworkInfo.State.CONNECTED;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,6 +83,14 @@ public class Login extends AppCompatActivity implements View.OnClickListener{
         imageView_back.setOnClickListener(this);
         login_button.setOnClickListener(this);
 
+        sp = getSharedPreferences(Constants.sharedPref,context.MODE_PRIVATE);
+
+
+        if(!checkConnection())
+        {
+            Snackbar.make(layoutId,"No Internet Connection, please try again later",Snackbar.LENGTH_SHORT).show();
+
+        }
 
     }
 
@@ -133,7 +142,7 @@ public class Login extends AppCompatActivity implements View.OnClickListener{
 
         layout_username.setError(null);
         layout_password.setError(null);
-        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("Users");
+        final DatabaseReference ref = FirebaseDatabase.getInstance().getReference("Users");
 
 
         //if user exists
@@ -142,17 +151,23 @@ public class Login extends AppCompatActivity implements View.OnClickListener{
             public void onDataChange( @NonNull DataSnapshot snapshot ) {
 
                 boolean userFound=false;
-                for(DataSnapshot dataSnapshot:snapshot.getChildren())
+
+                for(DataSnapshot dataSnapshot : snapshot.getChildren())
                 {
                     String dbusername = dataSnapshot.child("email_phone").getValue(String.class);
                     String dbpassword = dataSnapshot.child("password").getValue(String.class);
-
                     if(dbusername.equals(userId) && dbpassword.equals(hash_password))
                     {
+                        dialog_progress.dismiss();
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy.MM.dd G 'at' HH:mm:ss z");
+                        String currentDateandTime = sdf.format(new Date());
+                        String id=dataSnapshot.child("identificationKey").getValue().toString();
+
+                        ref.child(id).child("logIn_time").setValue(currentDateandTime);
                         userFound=true;
                         break;
                     }
-                    else if(dbusername.equals(userId) || dbpassword.equals(hash_password))
+                    else if(dbusername.equals(userId))
                     {
                         LinearLayout linearLayout = findViewById(R.id.login_layoutID);
                         dialog_progress.dismiss();
@@ -161,11 +176,11 @@ public class Login extends AppCompatActivity implements View.OnClickListener{
                     }
                 }
 
+
                 dialog_progress.dismiss();
 
                 if(userFound)
                 {
-                    sp = getSharedPreferences(Constants.isLoggedin,context.MODE_PRIVATE);
                     SharedPreferences.Editor sp_editor = sp.edit();
                     sp_editor.putString(Constants.isLoggedin,"true");
                     sp_editor.commit();
@@ -194,17 +209,41 @@ public class Login extends AppCompatActivity implements View.OnClickListener{
         {
             case R.id.login_tv_signup:
             {
-                startActivity(new Intent(context,SignUp.class));
+                if(!checkConnection())
+                {
+                    Snackbar.make(layoutId,"No Internet Connection, please try again later",Snackbar.LENGTH_SHORT).show();
+
+                }
+                else
+                {
+                    startActivity(new Intent(context,SignUp.class));
+                }
                 break;
             }
             case R.id.login_iv_back:
             {
-                finish();
+                if(!checkConnection())
+                {
+                    Snackbar.make(layoutId,"No Internet Connection, please try again later",Snackbar.LENGTH_SHORT).show();
+
+                }
+                else
+                {
+                    finish();
+                }
                 break;
             }
             case R.id.login_button:
             {
-                UserLogin();
+                if(!checkConnection())
+                {
+                    Snackbar.make(layoutId,"No Internet Connection, please try again later",Snackbar.LENGTH_SHORT).show();
+
+                }
+                else
+                {
+                    UserLogin();
+                }
                 break;
             }
 

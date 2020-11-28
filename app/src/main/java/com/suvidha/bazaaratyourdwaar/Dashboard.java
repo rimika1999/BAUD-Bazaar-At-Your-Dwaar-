@@ -3,6 +3,8 @@ package com.suvidha.bazaaratyourdwaar;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
+import androidx.constraintlayout.solver.state.State;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityOptionsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -11,14 +13,18 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -38,6 +44,15 @@ public class Dashboard extends AppCompatActivity {
     int currentHour,currentMin,currentSeconds;
     Handler handler_deal;
     CardView cardView_search_products;
+    SharedPreferences sp;
+    ConstraintLayout layoutId;
+
+    public boolean checkConnection() {
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        return connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).getState() == NetworkInfo.State.CONNECTED ||
+                connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI).getState() == NetworkInfo.State.CONNECTED;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,6 +63,17 @@ public class Dashboard extends AppCompatActivity {
         recyclerView_categories = findViewById(R.id.dashboard_rv_categories);
         textView_deal_of_the_day_time_left = findViewById(R.id.dashboard_tv_deal_time_left);
         cardView_search_products = findViewById(R.id.dashboard_card_searchproducts);
+
+        layoutId = findViewById(R.id.dashboard_layoutid);
+
+        sp = getSharedPreferences(Constants.sharedPref, MODE_PRIVATE);
+
+
+        if(!checkConnection())
+        {
+            Snackbar.make(layoutId,"No Internet Connection, please try again later",Snackbar.LENGTH_SHORT).show();
+        }
+
 
         completeProfile_check();
 
@@ -91,27 +117,62 @@ public class Dashboard extends AppCompatActivity {
                 {
                     case 0:
                     {
-                        refresh();
+                        if(!checkConnection())
+                        {
+                            Snackbar.make(layoutId,"No Internet Connection, please try again later",Snackbar.LENGTH_SHORT).show();
+                        }
+                        else
+                        {
+                            refresh();
+                        }
                         break;
                     }
                     case 1:
                     {
-                        startActivity(new Intent(context,Categories.class));
+                        if(!checkConnection())
+                        {
+                            Snackbar.make(layoutId,"No Internet Connection, please try again later",Snackbar.LENGTH_SHORT).show();
+                        }
+                        else
+                        {
+                            startActivity(new Intent(context,Categories.class));
+                        }
                         break;
                     }
                     case 2:
                     {
-                        startActivity(new Intent(context,MyCart.class));
+                        if(!checkConnection())
+                        {
+                            Snackbar.make(layoutId,"No Internet Connection, please try again later",Snackbar.LENGTH_SHORT).show();
+                        }
+                        else
+                        {
+                            startActivity(new Intent(context,MyCart.class));
+                        }
                         break;
                     }
                     case 3:
                     {
-                        startActivity(new Intent(context,Favourite.class));
+                        if(!checkConnection())
+                        {
+                            Snackbar.make(layoutId,"No Internet Connection, please try again later",Snackbar.LENGTH_SHORT).show();
+                        }
+                        else
+                        {
+                            startActivity(new Intent(context,Favourite.class));
+                        }
                         break;
                     }
                     case 4:
                     {
-                        startActivity(new Intent(context,Settings.class));
+                        if(!checkConnection())
+                        {
+                            Snackbar.make(layoutId,"No Internet Connection, please try again later",Snackbar.LENGTH_SHORT).show();
+                        }
+                        else
+                        {
+                            startActivity(new Intent(context,Settings.class));
+                        }
                         break;
                     }
                 }
@@ -124,15 +185,86 @@ public class Dashboard extends AppCompatActivity {
 
             @Override
             public void onTabReselected(TabLayout.Tab tab) {
-
+                switch (tab.getPosition())
+                {
+                    case 0:
+                    {
+                        if(!checkConnection())
+                        {
+                            Snackbar.make(layoutId,"No Internet Connection, please try again later",Snackbar.LENGTH_SHORT).show();
+                        }
+                        else
+                        {
+                            refresh();
+                        }
+                        break;
+                    }
+                    case 1:
+                    {
+                        if(!checkConnection())
+                        {
+                            Snackbar.make(layoutId,"No Internet Connection, please try again later",Snackbar.LENGTH_SHORT).show();
+                        }
+                        else
+                        {
+                            startActivity(new Intent(context,Categories.class));
+                        }
+                        break;
+                    }
+                    case 2:
+                    {
+                        if(!checkConnection())
+                        {
+                            Snackbar.make(layoutId,"No Internet Connection, please try again later",Snackbar.LENGTH_SHORT).show();
+                        }
+                        else
+                        {
+                            startActivity(new Intent(context,MyCart.class));
+                        }
+                        break;
+                    }
+                    case 3:
+                    {
+                        if(!checkConnection())
+                        {
+                            Snackbar.make(layoutId,"No Internet Connection, please try again later",Snackbar.LENGTH_SHORT).show();
+                        }
+                        else
+                        {
+                            startActivity(new Intent(context,Favourite.class));
+                        }
+                        break;
+                    }
+                    case 4:
+                    {
+                        if(!checkConnection())
+                        {
+                            Snackbar.make(layoutId,"No Internet Connection, please try again later",Snackbar.LENGTH_SHORT).show();
+                        }
+                        else
+                        {
+                            startActivity(new Intent(context,Settings.class));
+                        }
+                        break;
+                    }
+                }
             }
         });
 
         textView_search_products.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+
                 ActivityOptionsCompat activityOptionsCompat = ActivityOptionsCompat.makeSceneTransitionAnimation(Dashboard.this,cardView_search_products,"st_searchProducts");
-                startActivity(new Intent(context,SearchProducts.class),activityOptionsCompat.toBundle());
+                if(!checkConnection())
+                {
+                    Snackbar.make(layoutId,"No Internet Connection, please try again later",Snackbar.LENGTH_SHORT).show();
+                }
+                else
+                {
+                    startActivity(new Intent(context,SearchProducts.class),activityOptionsCompat.toBundle());
+                }
+
             }
         });
 
@@ -141,46 +273,45 @@ public class Dashboard extends AppCompatActivity {
 
     private void completeProfile_check()
     {
-        SharedPreferences sp;
-        sp = getSharedPreferences(Constants.sharedPref, MODE_PRIVATE);
-        final String user_id_Key = sp.getString(Constants.sp_key,"");
+
+
+        final String user_id_Key = sp.getString(Constants.sp_userkey,"");
 
         DatabaseReference ref = FirebaseDatabase.getInstance().getReference("UserProfile");
         ref.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange( @NonNull DataSnapshot snapshot ) {
 
-                for(DataSnapshot dataSnapshot : snapshot.getChildren())
+                String username = snapshot.child(user_id_Key).child("name").getValue(String.class);
+                String profile_dialogonce = sp.getString(Constants.profile_dialog_once,"");
+                if(username==null && profile_dialogonce.equals("false"))
                 {
-                    String userIdKey = dataSnapshot.child("identificationKey").getValue(String.class);
-                    if(userIdKey.equals(user_id_Key))
-                    {
-                        String name = dataSnapshot.child("name").getValue(String.class);
-                        if(name==null)
-                        {
-                            //dialog for profile completion
-                            Dialog dialog_profile_completion = new Dialog(context);
-                            dialog_profile_completion.setContentView(R.layout.activity_profile_completion_dialog);
 
-                            Button edit_profile;
-                            edit_profile = dialog_profile_completion.findViewById(R.id.editProfile_button);
+                    //dialog for profile completion
+                    Dialog dialog_profile_completion = new Dialog(context);
+                    dialog_profile_completion.setContentView(R.layout.activity_profile_completion_dialog);
+                    dialog_profile_completion.show();
 
-                            edit_profile.setOnClickListener(new View.OnClickListener() {
-                                @Override
-                                public void onClick( View v ) {
-                                    startActivity(new Intent(context,Profile.class));
-                                    finish();
-                                }
-                            });
-                            dialog_profile_completion.show();
+                    SharedPreferences.Editor sp_editor = sp.edit();
+                    sp_editor.putString(Constants.profile_dialog_once,"true");
+                    sp_editor.commit();
 
+                    Button edit_profile;
+                    edit_profile = dialog_profile_completion.findViewById(R.id.editProfile_button);
+
+                    edit_profile.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick( View v ) {
+                            startActivity(new Intent(context,Profile.class));
+                            finish();
                         }
-                        else
-                        {
-                            return;
-                        }
-                    }
+                    });
 
+
+                }
+                else
+                {
+                    return;
                 }
             }
 

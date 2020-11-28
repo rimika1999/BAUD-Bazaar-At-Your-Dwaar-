@@ -8,6 +8,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.util.Log;
 import android.util.Patterns;
@@ -29,8 +31,11 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.PhoneAuthCredential;
 import com.google.firebase.auth.PhoneAuthProvider;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.TimeUnit;
@@ -46,13 +51,20 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
     ImageView imageView_back;
     Button signUp_button;
     EditText email,username,password,confirmPassword;
-    Dialog dialog_progress;
+    Dialog dialog_progress,dialog_noConnection;
     String verificationID;
     Boolean otp_verification=false;
     LinearLayout layoutId;
 
 
     private FirebaseAuth mAuth;
+
+    public boolean checkConnection() {
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        return connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).getState() == NetworkInfo.State.CONNECTED ||
+                connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI).getState() == NetworkInfo.State.CONNECTED;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -79,6 +91,11 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
         signUp_button.setOnClickListener(this);
 
 
+        if(!checkConnection())
+        {
+            Snackbar.make(layoutId,"No Internet Connection, please try again later",Snackbar.LENGTH_SHORT).show();
+        }
+
         mCallBacks= new PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
 
             FirebaseUser User = mAuth.getCurrentUser();
@@ -98,6 +115,7 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
                 verifyCode_button = dialog_otp.findViewById(R.id.OTP_verification_button);
                 OTP_code=dialog_otp.findViewById(R.id.enter_OTP);
 
+                dialog_otp.show();
                 verifyCode_button.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick( View v ) {
@@ -111,7 +129,7 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
 
                     }
                 });
-                dialog_otp.show();
+
             }
 
             @Override
@@ -157,8 +175,8 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
                             if(task.isSuccessful())
                             {
                                 Snackbar.make(layoutId,"Please verify your Email address",Snackbar.LENGTH_SHORT).show();
-                                startActivity(new Intent(context,Login.class));
-                                finish();
+                                //startActivity(new Intent(context,Login.class));
+                                //finish();
                             }
                             else
                             {
@@ -189,12 +207,13 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
                 {
                     Log.d("TAG","Sign in with credential:Success");
                     otp_verification=true;
-                    startActivity(new Intent(context,Login.class));
-                    finish();
+                    //startActivity(new Intent(context,Login.class));
+                    //finish();
                 }
                 else
                 {
                     //sign in failed
+                    Snackbar.make(layoutId,"Sign in failed",Snackbar.LENGTH_SHORT).show();
                     Log.w("TAG","Sign in with credential:Failure",task.getException());
                 }
             }
@@ -265,7 +284,7 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
                 String phoneNum=Email;
                 Log.d("TAG", "onClick: phone number value="+phoneNum);
                 requestOTP("+91"+phoneNum);
-                    return true;
+                return true;
             }
             return false;
         }
@@ -290,56 +309,125 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
         return result.toString();
     }
 
+
     @Override
     public void onClick(View view) {
         switch (view.getId())
         {
             case R.id.profile_iv_back:
             {
-                finish();
+                if(!checkConnection())
+                {
+                    Snackbar.make(layoutId,"No Internet Connection, please try again later",Snackbar.LENGTH_SHORT).show();
+                }
+                else
+                {
+                    finish();
+                }
                 break;
             }
             case R.id.signup_tv_login:
             {
-                Intent intent = new Intent(context,Login.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                startActivity(intent);
+                if(!checkConnection())
+                {
+                    Snackbar.make(layoutId,"No Internet Connection, please try again later",Snackbar.LENGTH_SHORT).show();
+                }
+                else
+                {
+                    Intent intent = new Intent(context,Login.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                }
+
                 break;
             }
             case R.id.signUp_button:
             {
-                dialog_progress.setContentView(R.layout.activity_dialog_loading);
-                if(registerUser()) {
+                if(!checkConnection())
+                {
+                    Snackbar.make(layoutId,"No Internet Connection, please try again later",Snackbar.LENGTH_SHORT).show();
+                }
+                else
+                {
 
-                    //save data in firebase database
-                    DatabaseReference UserDatabase;
+                    dialog_progress.setContentView(R.layout.activity_dialog_loading);
+                    //check if user already exists
+                    final String Email = email.getText().toString();
+                    DatabaseReference ref = FirebaseDatabase.getInstance().getReference("Users");
+                    ref.addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange( @NonNull DataSnapshot snapshot ) {
+                            boolean userExists=false;
 
-                    String userIdentification_key;
-                    String Username = username.getText().toString();
-                    String Email = email.getText().toString();
-                    String Password = password.getText().toString();
-                    String encodedPass = null;
-                    try {
-                        encodedPass = hash256(Password);
-                    } catch (NoSuchAlgorithmException e) {
-                        e.printStackTrace();
-                    }
+                            for(DataSnapshot dataSnapshot : snapshot.getChildren()) {
+                                String dbusername = dataSnapshot.child("email_phone").getValue(String.class);
+                                if (dbusername.equals(Email)) {
+                                    LinearLayout linearLayout = findViewById(R.id.signUp_layoutId);
+                                    Snackbar.make(linearLayout, "Username already in use", Snackbar.LENGTH_LONG).show();
+                                    userExists=true;
+                                    break;
+                                }
+                            }
+
+                            if(userExists)
+                            {
+                                return;
+                            }
+
+                            if(registerUser()) {
+
+                                //if email verified
+                                FirebaseUser User=mAuth.getCurrentUser();
+
+                                if(otp_verification || User.isEmailVerified())
+                                {
+                                    //save data in firebase database
+                                    DatabaseReference UserDatabase;
+
+                                    String userIdentification_key;
+                                    String Username = username.getText().toString();
+                                    String Password = password.getText().toString();
+                                    String encodedPass = null;
+                                    try {
+                                        encodedPass = hash256(Password);
+                                    } catch (NoSuchAlgorithmException e) {
+                                        e.printStackTrace();
+                                    }
 
 
-                    UserDatabase = FirebaseDatabase.getInstance().getReference();
-                    /*FirebaseUser User=mAuth.getCurrentUser();
-                    if(User.isEmailVerified());*/
+                                    UserDatabase = FirebaseDatabase.getInstance().getReference();
 
-                    userIdentification_key=UserDatabase.child("Users").push().getKey();
-                    HelperClass_User user_helperclass = new HelperClass_User(Username, Email, encodedPass,userIdentification_key);
-                    UserDatabase.child("Users").child(userIdentification_key).setValue(user_helperclass);
 
-                    SharedPreferences.Editor sp_editor = sp.edit();
-                    sp_editor.putString(Constants.sp_key,userIdentification_key);
-                    sp_editor.commit();
+                                    userIdentification_key=UserDatabase.child("Users").push().getKey();
+                                    HelperClass_User user_helperclass = new HelperClass_User(Username, Email, encodedPass,userIdentification_key,null,null);
+                                    UserDatabase.child("Users").child(userIdentification_key).setValue(user_helperclass);
 
-                    HelperClass_Profile user_profileDB = new HelperClass_Profile(userIdentification_key,null,null,null,null,null,null,null);
-                    UserDatabase.child("UserProfile").push().setValue(user_profileDB);
+                                    SharedPreferences.Editor sp_editor = sp.edit();
+                                    sp_editor.putString(Constants.sp_key,userIdentification_key);
+                                    sp_editor.commit();
+
+                                    String user_profileKey;
+                                    user_profileKey = UserDatabase.child("UserProfile").push().getKey();
+                                    HelperClass_Profile user_profileDB = new HelperClass_Profile(user_profileKey,userIdentification_key,null,null,null,null,null,null,null,null);
+                                    UserDatabase.child("UserProfile").child(user_profileKey).setValue(user_profileDB);
+
+                                    sp_editor.putString(Constants.sp_userkey,user_profileKey);
+                                    sp_editor.commit();
+
+                                    startActivity(new Intent(context,Login.class));
+                                    finish();
+
+                                }
+
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled( @NonNull DatabaseError error ) {
+
+                        }
+                    });
+
 
                 }
                 break;

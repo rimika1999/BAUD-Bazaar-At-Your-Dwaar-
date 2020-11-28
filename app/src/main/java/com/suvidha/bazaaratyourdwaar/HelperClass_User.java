@@ -1,13 +1,15 @@
 package com.suvidha.bazaaratyourdwaar;
 
 public class HelperClass_User {
-    String username,email_phone,password,identificationKey;
+    String username,email_phone,password,identificationKey,logIn_time,logOut_time;
 
-    public HelperClass_User( String username, String email_phone, String password,String identificationKey ) {
+    public HelperClass_User( String username, String email_phone, String password,String identificationKey,String logIn_time,String logOut_time ) {
         this.identificationKey=identificationKey;
         this.username = username;
         this.email_phone = email_phone;
         this.password = password;
+        this.logIn_time = logIn_time;
+        this.logOut_time = logOut_time;
     }
 
     public HelperClass_User() {
@@ -43,5 +45,21 @@ public class HelperClass_User {
 
     public void setPassword( String password ) {
         this.password = password;
+    }
+
+    public String getLogIn_time() {
+        return logIn_time;
+    }
+
+    public void setLogIn_time( String logIn_time ) {
+        this.logIn_time = logIn_time;
+    }
+
+    public String getLogOut_time() {
+        return logOut_time;
+    }
+
+    public void setLogOut_time( String logOut_time ) {
+        this.logOut_time = logOut_time;
     }
 }

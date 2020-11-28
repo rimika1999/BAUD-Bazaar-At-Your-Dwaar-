@@ -4,14 +4,18 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
+import android.text.Layout;
 import android.util.Log;
 import android.util.Patterns;
 import android.view.View;
@@ -20,31 +24,47 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.snackbar.Snackbar;
-import com.google.android.material.textfield.TextInputLayout;
-import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
+import com.squareup.picasso.Picasso;
+
+import de.hdodenhof.circleimageview.CircleImageView;
 
 
 public class Profile extends AppCompatActivity implements View.OnClickListener{
 
+    Context context=this;
     FirebaseAuth mauth;
     EditText edit_name,edit_address,edit_district,edit_state,edit_pincode,edit_email,edit_phonenumber;
     Button profile_button;
     TextView textview_profile;
     ImageView imageview_back;
-    Dialog dialog_progress;
-    Context context=this;
+    Dialog dialog_progress,dialog_noConnection;
     LinearLayout layoutId;
-    TextView textView_name,textView_address,textView_email,textView_contact;
+    CircleImageView profilepic_profile;
+    ImageView profile_pic,edit_profilepic;
+
+    StorageReference storageReference;
+    DatabaseReference refDatabase;
+    String URL;
+
+    public boolean checkConnection() {
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        return connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).getState() == NetworkInfo.State.CONNECTED ||
+                connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI).getState() == NetworkInfo.State.CONNECTED;
+    }
 
     @Override
     protected void onCreate( @Nullable Bundle savedInstanceState ) {
@@ -52,8 +72,9 @@ public class Profile extends AppCompatActivity implements View.OnClickListener{
         setContentView(R.layout.activity_profile);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
-
         mauth = FirebaseAuth.getInstance();
+
+        layoutId = findViewById(R.id.profile_layout);
         edit_name = findViewById(R.id.profile_et_fullname);
         edit_address = findViewById(R.id.profile_et_address_value);
         edit_state = findViewById((R.id.profile_et_state));
@@ -62,13 +83,12 @@ public class Profile extends AppCompatActivity implements View.OnClickListener{
         edit_email = findViewById(R.id.profile_et_email);
         edit_phonenumber = findViewById(R.id.profile_et_phone_number);
 
-        textView_name = findViewById(R.id.textview_profile_username);
-        textView_address = findViewById(R.id.textview_profile_useraddress);
-        textView_email = findViewById(R.id.textview_profile_useremail);
-        textView_contact = findViewById(R.id.textview_profile_usercontact);
+        profile_pic = findViewById(R.id.profile_pic);
+        edit_profilepic = findViewById(R.id.edit_profilepic);
 
         imageview_back = findViewById(R.id.profile_iv_back);
         profile_button = findViewById(R.id.update_profile_button);
+        profilepic_profile = findViewById(R.id.profile_pic);
 
         dialog_progress = new Dialog(context);
         dialog_progress.setContentView(R.layout.activity_dialog_loading);
@@ -76,6 +96,56 @@ public class Profile extends AppCompatActivity implements View.OnClickListener{
 
         imageview_back.setOnClickListener(this);
         profile_button.setOnClickListener(this);
+        edit_profilepic.setOnClickListener(this);
+
+        if(!checkConnection())
+        {
+            Snackbar.make(layoutId,"No Internet Connection, please try again later",Snackbar.LENGTH_SHORT).show();
+        }
+
+        SharedPreferences sp;
+        sp = getSharedPreferences(Constants.sharedPref,context.MODE_PRIVATE);
+        final String userProfileId = sp.getString(Constants.sp_userkey,"");
+        refDatabase = FirebaseDatabase.getInstance().getReference("UserProfile").child(userProfileId);
+
+
+        refDatabase.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange( @NonNull DataSnapshot snapshot ) {
+                String name,add,district,state,pincode,mail,phonenumber;
+                name = snapshot.child("name").getValue(String.class);
+                add = snapshot.child("address").getValue(String.class);
+                district = snapshot.child("district").getValue(String.class);
+                state = snapshot.child("state").getValue(String.class);
+                pincode = snapshot.child("pincode").getValue(String.class);
+                mail = snapshot.child("email").getValue(String.class);
+                phonenumber = snapshot.child("phonenumber").getValue(String.class);
+
+                if(name!=null)
+                {
+                    edit_name.setText(name);
+                    edit_address.setText(add);
+                    edit_district.setText(district);
+                    edit_state.setText(state);
+                    edit_pincode.setText(pincode);
+                    edit_email.setText(mail);
+                    edit_phonenumber.setText(phonenumber);
+                }
+
+                String profilepic_url;
+                profilepic_url = snapshot.child("profilepic_url").getValue(String.class);
+                if(profilepic_url!=null)
+                {
+                    Picasso.get().load(profilepic_url).into(profilepic_profile);
+                }
+            }
+
+            @Override
+            public void onCancelled( @NonNull DatabaseError error ) {
+
+            }
+        });
+
     }
 
     private void UpdateProfile(){
@@ -138,47 +208,95 @@ public class Profile extends AppCompatActivity implements View.OnClickListener{
 
         SharedPreferences sp;
         sp = getSharedPreferences(Constants.sharedPref, MODE_PRIVATE);
-        final String user_id_Key = sp.getString(Constants.sp_key,"");
+        final String userProfileId = sp.getString(Constants.sp_userkey,"");
+        refDatabase = FirebaseDatabase.getInstance().getReference("UserProfile");
 
-        final DatabaseReference refDatabase = FirebaseDatabase.getInstance().getReference("UserProfile");
         refDatabase.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange( @NonNull DataSnapshot snapshot ) {
 
-                for(DataSnapshot datasnapshot : snapshot.getChildren())
-                {
-                    String id = datasnapshot.child("identificationKey").getValue(String.class);
+                refDatabase.child(userProfileId).child("name").setValue(name);
+                refDatabase.child(userProfileId).child("address").setValue(address);
+                refDatabase.child(userProfileId).child("district").setValue(district);
+                refDatabase.child(userProfileId).child("state").setValue(state);
+                refDatabase.child(userProfileId).child("pincode").setValue(pincode);
+                refDatabase.child(userProfileId).child("email").setValue(email);
+                refDatabase.child(userProfileId).child("phonenumber").setValue(phonenumber);
 
-                    if(id.equals(user_id_Key))
-                    {
-                        dialog_progress.dismiss();
-                        String dbKey = datasnapshot.getKey();
-                        refDatabase.child(dbKey).child("name").setValue(name);
-                        refDatabase.child(dbKey).child("address").setValue(address);
-                        refDatabase.child(dbKey).child("district").setValue(district);
-                        refDatabase.child(dbKey).child("state").setValue(state);
-                        refDatabase.child(dbKey).child("pincode").setValue(pincode);
-                        refDatabase.child(dbKey).child("email").setValue(email);
-                        refDatabase.child(dbKey).child("phonenumber").setValue(phonenumber);
-
-                        textView_name.setText(name);
-                        textView_address.setText("Address:"+address+" "+district+" "+state+" "+pincode);
-                        textView_email.setText("Email:"+email);
-                        textView_contact.setText("Phone No:"+phonenumber);
-
-                        LinearLayout linearLayout = findViewById(R.id.profile_layout);
-                        Snackbar.make(linearLayout,"Profile Updated",Snackbar.LENGTH_LONG).show();
-                        break;
-                    }
-                }
                 dialog_progress.dismiss();
-                startActivity(new Intent(context,Dashboard.class));
-                finish();
+                LinearLayout linearLayout = findViewById(R.id.profile_layout);
+                Snackbar.make(linearLayout,"Profile Updated",Snackbar.LENGTH_LONG).show();
+
             }
 
             @Override
             public void onCancelled( @NonNull DatabaseError error ) {
 
+            }
+        });
+
+    }
+
+    void setProfilepic()
+    {
+        Intent openGalleryIntent= new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        startActivityForResult(openGalleryIntent,1000);
+    }
+
+    @Override
+    protected void onActivityResult( int requestCode, int resultCode, @Nullable Intent data ) {
+        super.onActivityResult(requestCode, resultCode, data);//data with uri of the image
+
+        if(requestCode == 1000)
+        {
+            if(resultCode == Activity.RESULT_OK)
+            {
+                Uri imageUri = data.getData();//getting uri of the image
+                //profilepic_profile.setImageURI(imageUri);
+                dialog_progress.show();
+                uploadImageToFirebase(imageUri);
+            }
+        }
+    }
+
+    private void uploadImageToFirebase( final Uri imageUri) {
+
+        storageReference = FirebaseStorage.getInstance().getReference();
+        final StorageReference fileref = storageReference.child("Users/"+mauth.getCurrentUser().getUid()+"/Profilepic.jpg");
+
+        fileref.putFile(imageUri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onSuccess( UploadTask.TaskSnapshot taskSnapshot ) {
+
+                fileref.getDownloadUrl().addOnCompleteListener(new OnCompleteListener<Uri>() {
+                    @Override
+                    public void onComplete( @NonNull Task<Uri> task ) {
+                         URL=task.getResult().toString();
+
+                        SharedPreferences sp;
+                        sp = getSharedPreferences(Constants.sharedPref, MODE_PRIVATE);
+                        final String user_profile_Key = sp.getString(Constants.sp_userkey,"");
+                        refDatabase = FirebaseDatabase.getInstance().getReference("UserProfile").child(user_profile_Key);
+
+                        refDatabase.addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange( @NonNull DataSnapshot snapshot ) {
+
+                                dialog_progress.dismiss();
+                                Picasso.get().load(URL).into(profile_pic);
+                                refDatabase.child("profilepic_url").setValue(URL);
+
+
+                            }
+
+                            @Override
+                            public void onCancelled( @NonNull DatabaseError error ) {
+
+                            }
+                        });
+
+                    }
+                });
             }
         });
 
@@ -190,13 +308,40 @@ public class Profile extends AppCompatActivity implements View.OnClickListener{
         {
             case R.id.profile_iv_back:
             {
-                finish();
-                return;
+                if(!checkConnection())
+                {
+                    Snackbar.make(layoutId,"No Internet Connection, please try again later",Snackbar.LENGTH_SHORT).show();
+                }
+                else
+                {
+                    finish();
+                    return;
+                }
+                break;
+            }
+            case R.id.edit_profilepic:
+            {
+                if(!checkConnection())
+                {
+                    Snackbar.make(layoutId,"No Internet Connection, please try again later",Snackbar.LENGTH_SHORT).show();
+                }
+                else
+                {
+                    setProfilepic();
+                    break;
+                }
             }
             case R.id.update_profile_button:
             {
-                UpdateProfile();
-                return;
+                if(!checkConnection())
+                {
+                    Snackbar.make(layoutId,"No Internet Connection, please try again later",Snackbar.LENGTH_SHORT).show();
+                }
+                else
+                {
+                    UpdateProfile();
+                    break;
+                }
             }
         }
 
