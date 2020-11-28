@@ -9,16 +9,19 @@ import android.widget.ImageView;
 import androidx.annotation.NonNull;
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
+
+import com.squareup.picasso.Picasso;
+
 import java.util.List;
 
 public class ViewPagerAdapterProducts extends PagerAdapter {
     Context context;
-    List<Integer> images;
+    List<String> images;
     public ViewPagerAdapterProducts(Context context) {
         this.context = context;
     }
 
-    public ViewPagerAdapterProducts(Context context, List<Integer> images) {
+    public ViewPagerAdapterProducts(Context context, List<String> images) {
         this.context = context;
         this.images = images;
     }
@@ -39,7 +42,7 @@ public class ViewPagerAdapterProducts extends PagerAdapter {
         View layout = inflater.inflate(R.layout.viewpager_item_product_images, null);
 
         ImageView imageView = layout.findViewById(R.id.viewpager_item_product_img);
-        imageView.setImageResource(images.get(position));
+        Picasso.get().load(images.get(position)).into(imageView);
 
         ViewPager viewPager = (ViewPager) collection;
         viewPager.addView(layout);
