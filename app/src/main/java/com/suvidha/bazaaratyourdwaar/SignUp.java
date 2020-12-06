@@ -50,10 +50,10 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
     Context context = this;
     ImageView imageView_back;
     Button signUp_button;
-    EditText email,username,password,confirmPassword;
+    EditText email,username,password,confirmPassword,phone;
     Dialog dialog_progress,dialog_noConnection;
     String verificationID;
-    Boolean otp_verification=false;
+    Boolean otp_verification;
     LinearLayout layoutId;
 
 
@@ -79,6 +79,7 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
         imageView_back = findViewById(R.id.profile_iv_back);
         signUp_button = findViewById(R.id.signUp_button);
         email = findViewById(R.id.signup_et_email);
+        phone = findViewById(R.id.signup_et_phone);
         username = findViewById(R.id.signup_et_username);
         password = findViewById(R.id.signup_et_password);
         confirmPassword = findViewById(R.id.signup_et_confirmPassword);
@@ -89,6 +90,8 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
         textView_login.setOnClickListener(this);
         imageView_back.setOnClickListener(this);
         signUp_button.setOnClickListener(this);
+
+        otp_verification = false;
 
 
         if(!checkConnection())
@@ -106,7 +109,7 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
                 verificationID=s;
                 Log.d("TAG","On Code Sent:"+s);
                 //pop-up
-                Dialog dialog_otp = new Dialog(context);
+                final Dialog dialog_otp = new Dialog(context);
                 dialog_otp.setContentView(R.layout.activity_otp_dialog);
 
                 final EditText OTP_code;
@@ -120,12 +123,17 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
                     @Override
                     public void onClick( View v ) {
                         String verificationCode = OTP_code.getText().toString();
-                        if(verificationID.isEmpty())
+                        if(!verificationID.isEmpty())
                         {
+                            PhoneAuthCredential credential= PhoneAuthProvider.getCredential(verificationID,verificationCode);
+                            signInWithPhoneAuthCredential(credential);
+                        }
+                        else
+                        {
+                            dialog_otp.dismiss();
                             return;
                         }
-                        PhoneAuthCredential credential= PhoneAuthProvider.getCredential(verificationID,verificationCode);
-                        signInWithPhoneAuthCredential(credential);
+                        dialog_otp.dismiss();
 
                     }
                 });
@@ -203,6 +211,7 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
         mAuth.signInWithCredential(credential).addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
             @Override
             public void onComplete( @NonNull Task<AuthResult> task ) {
+
                 if(task.isSuccessful())
                 {
                     Log.d("TAG","Sign in with credential:Success");
@@ -232,6 +241,7 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
     {
         String UserName = username.getText().toString();
         String Email=email.getText().toString();
+        String phoneNo = phone.getText().toString();
         String Password = password.getText().toString();
         String ConfirmPassword = confirmPassword.getText().toString();
 
@@ -247,10 +257,22 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
             email.requestFocus();
             return false;
         }
-        else if(!Patterns.EMAIL_ADDRESS.matcher(Email).matches() && Email.length()!=10)
+        else if(!Patterns.EMAIL_ADDRESS.matcher(Email).matches())
         {
-            email.setError("Invalid Email or Phone number");
+            email.setError("Invalid Email");
             email.requestFocus();
+            return false;
+        }
+        else if(phoneNo.isEmpty())
+        {
+            phone.setError("Mobile Number required");
+            phone.requestFocus();
+            return false;
+        }
+        else if(phoneNo.length()!=10)
+        {
+            phone.setError("Invalid Mobile Number");
+            phone.requestFocus();
             return false;
         }
         else if(Password.isEmpty() || Password.length()<6)
@@ -273,7 +295,7 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
         else
         {
             dialog_progress.show();
-            if(Patterns.EMAIL_ADDRESS.matcher(Email).matches())
+            /*if(Patterns.EMAIL_ADDRESS.matcher(Email).matches())
             {
                 //Email authentication
                 emailAuthentication(Email,Password);
@@ -284,6 +306,14 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
                 String phoneNum=Email;
                 Log.d("TAG", "onClick: phone number value="+phoneNum);
                 requestOTP("+91"+phoneNum);
+                return true;
+            }*/
+
+            //mobile number authentication
+            if(phoneNo.length()==10)
+            {
+                Log.d("TAG", "onClick: phone number value="+phoneNo);
+                requestOTP("+91"+phoneNo);
                 return true;
             }
             return false;
@@ -316,14 +346,7 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
         {
             case R.id.profile_iv_back:
             {
-                if(!checkConnection())
-                {
-                    Snackbar.make(layoutId,"No Internet Connection, please try again later",Snackbar.LENGTH_SHORT).show();
-                }
-                else
-                {
-                    finish();
-                }
+                finish();
                 break;
             }
             case R.id.signup_tv_login:
@@ -352,7 +375,7 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
 
                     dialog_progress.setContentView(R.layout.activity_dialog_loading);
                     //check if user already exists
-                    final String Email = email.getText().toString();
+                    final String phoneNo = phone.getText().toString();
                     DatabaseReference ref = FirebaseDatabase.getInstance().getReference("Users");
                     ref.addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
@@ -360,10 +383,10 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
                             boolean userExists=false;
 
                             for(DataSnapshot dataSnapshot : snapshot.getChildren()) {
-                                String dbusername = dataSnapshot.child("email_phone").getValue(String.class);
-                                if (dbusername.equals(Email)) {
+                                String dbusername = dataSnapshot.child("phone").getValue(String.class);
+                                if (dbusername.equals(phoneNo)) {
                                     LinearLayout linearLayout = findViewById(R.id.signUp_layoutId);
-                                    Snackbar.make(linearLayout, "Username already in use", Snackbar.LENGTH_LONG).show();
+                                    Snackbar.make(linearLayout, "User already in use", Snackbar.LENGTH_LONG).show();
                                     userExists=true;
                                     break;
                                 }
@@ -379,7 +402,8 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
                                 //if email verified
                                 FirebaseUser User=mAuth.getCurrentUser();
 
-                                if(otp_verification || User.isEmailVerified())
+
+                                if(otp_verification)
                                 {
                                     //save data in firebase database
                                     DatabaseReference UserDatabase;
@@ -387,6 +411,8 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
                                     String userIdentification_key;
                                     String Username = username.getText().toString();
                                     String Password = password.getText().toString();
+                                    String Email = email.getText().toString();
+                                    String Phone = phone.getText().toString();
                                     String encodedPass = null;
                                     try {
                                         encodedPass = hash256(Password);
@@ -399,20 +425,27 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
 
 
                                     userIdentification_key=UserDatabase.child("Users").push().getKey();
-                                    HelperClass_User user_helperclass = new HelperClass_User(Username, Email, encodedPass,userIdentification_key,null,null);
+                                    HelperClass_User user_helperclass = new HelperClass_User(Username, Email,Phone, encodedPass,userIdentification_key,null,null);
                                     UserDatabase.child("Users").child(userIdentification_key).setValue(user_helperclass);
 
                                     SharedPreferences.Editor sp_editor = sp.edit();
                                     sp_editor.putString(Constants.sp_key,userIdentification_key);
                                     sp_editor.commit();
 
-                                    String user_profileKey;
+                                    String user_profileKey,user_cartKey;
                                     user_profileKey = UserDatabase.child("UserProfile").push().getKey();
-                                    HelperClass_Profile user_profileDB = new HelperClass_Profile(user_profileKey,userIdentification_key,null,null,null,null,null,null,null,null);
+                                    user_cartKey = UserDatabase.child("UserItems").push().getKey();
+
+                                    HelperClass_cart userCart = new HelperClass_cart(null,0);
+                                    UserDatabase.child("UserItems").child(user_cartKey).setValue(userCart);
+
+                                    HelperClass_Profile user_profileDB = new HelperClass_Profile(user_profileKey,userIdentification_key,null,null,null,null,null,null,null,null,user_cartKey);
                                     UserDatabase.child("UserProfile").child(user_profileKey).setValue(user_profileDB);
 
                                     sp_editor.putString(Constants.sp_userkey,user_profileKey);
+                                    sp_editor.putString(Constants.sp_usercart_key,user_cartKey);
                                     sp_editor.commit();
+
 
                                     startActivity(new Intent(context,Login.class));
                                     finish();

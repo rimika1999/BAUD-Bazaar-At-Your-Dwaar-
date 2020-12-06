@@ -41,7 +41,20 @@
         android:layout_width="match_parent"
         android:layout_marginTop="24dp"
         android:layout_height="wrap_content"
-        android:hint="Email or Phone">
+        android:hint="Mobile Number">
+        <com.google.android.material.textfield.TextInputEditText
+            android:layout_width="match_parent"
+            android:background="#fff"
+            android:inputType="textEmailAddress"
+            android:id="@+id/signup_et_phone"
+            android:layout_height="wrap_content"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_marginTop="24dp"
+        android:layout_height="wrap_content"
+        android:hint="Email">
         <com.google.android.material.textfield.TextInputEditText
             android:layout_width="match_parent"
             android:background="#fff"
@@ -49,6 +62,7 @@
             android:id="@+id/signup_et_email"
             android:layout_height="wrap_content"/>
     </com.google.android.material.textfield.TextInputLayout>
+
     <com.google.android.material.textfield.TextInputLayout
         android:layout_marginTop="24dp"
         android:layout_width="match_parent"

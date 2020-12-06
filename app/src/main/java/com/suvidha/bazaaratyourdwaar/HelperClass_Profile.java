@@ -1,9 +1,9 @@
 package com.suvidha.bazaaratyourdwaar;
 
 public class HelperClass_Profile {
-    String identificationKey,name,address,district,state,pincode,email,phonenumber,profilepic_url,user_profileKey;
+    String identificationKey,name,address,district,state,pincode,email,phonenumber,profilepic_url,user_profileKey,user_cartKey;
 
-    public HelperClass_Profile( String user_profileKey,String identificationKey, String name, String address, String district, String state, String pincode, String email, String phonenumber,String profilepic_url ) {
+    public HelperClass_Profile( String user_profileKey,String identificationKey, String name, String address, String district, String state, String pincode, String email, String phonenumber,String profilepic_url,String user_cartKey ) {
         this.user_profileKey = user_profileKey;
         this.identificationKey = identificationKey;
         this.name = name;
@@ -14,6 +14,7 @@ public class HelperClass_Profile {
         this.email = email;
         this.phonenumber = phonenumber;
         this.profilepic_url=profilepic_url;
+        this.user_cartKey = user_cartKey;
     }
 
     public HelperClass_Profile() {
@@ -98,5 +99,13 @@ public class HelperClass_Profile {
 
     public void setProfilepic_url( String profilepic_url ) {
         this.profilepic_url = profilepic_url;
+    }
+
+    public String getUser_cartKey() {
+        return user_cartKey;
+    }
+
+    public void setUser_cartKey( String user_cartKey ) {
+        this.user_cartKey = user_cartKey;
     }
 }

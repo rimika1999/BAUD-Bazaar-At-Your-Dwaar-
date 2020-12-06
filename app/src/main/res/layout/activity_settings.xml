@@ -44,7 +44,7 @@
         <LinearLayout
             android:id="@+id/profile_layout_outline"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:orientation="vertical"
             android:paddingLeft="12dp"
             android:paddingRight="12dp">
@@ -67,7 +67,7 @@
                 <LinearLayout
                     android:id="@+id/user_inputs"
                     android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
+                    android:layout_height="wrap_content"
                     android:orientation="vertical">
 
                     <LinearLayout

@@ -1,14 +1,22 @@
 package com.suvidha.bazaaratyourdwaar;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.solver.state.State;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.ViewPager;
 
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -18,7 +26,13 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -26,7 +40,7 @@ import org.json.JSONException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ViewItem extends AppCompatActivity {
+public class ViewItem extends AppCompatActivity implements View.OnClickListener {
 
     ViewPager viewPager,viewPager_DR;
     Context context = this;
@@ -34,8 +48,17 @@ public class ViewItem extends AppCompatActivity {
     List<String> images;
     RecyclerView recyclerView_products_show;
     TextView textView_heading,textView_item_name,textView_price,textView_discount;
-    ImageView imageView_share,imageView_add_fav;
+    ImageView imageView_share,imageView_add_fav,viewItem_back;
+    Button add_to_cart;
+    ConstraintLayout layoutId;
     boolean isItemFav = false;
+    DatabaseReference refDatabase;
+
+    public boolean checkConnection() {
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        return connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).getState() == NetworkInfo.State.CONNECTED ||
+                connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI).getState() == NetworkInfo.State.CONNECTED;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +77,14 @@ public class ViewItem extends AppCompatActivity {
         textView_price = findViewById(R.id.view_item_tv_price);
         imageView_share = findViewById(R.id.view_item_iv_share);
         imageView_add_fav = findViewById(R.id.view_item_iv_add_fav);
+
+        add_to_cart = findViewById(R.id.view_item_addToCart);
+        viewItem_back = findViewById(R.id.view_item_iv_back);
+
+        add_to_cart.setOnClickListener(this);
+        viewItem_back.setOnClickListener(this);
+
+
 
         images = new ArrayList<>();
 
@@ -83,7 +114,7 @@ public class ViewItem extends AppCompatActivity {
             }
         });
 
-        fetchData(getIntent().getStringExtra("itemId"));
+
 
         imageView_add_fav.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -98,8 +129,13 @@ public class ViewItem extends AppCompatActivity {
                     imageView_add_fav.setImageResource(R.drawable.icon_fav_selected);
                     isItemFav = !isItemFav;
                 }
+
+
             }
         });
+
+        final String productId = getIntent().getStringExtra("itemId");
+        fetchData(productId);
 
     }
 
@@ -110,7 +146,7 @@ public class ViewItem extends AppCompatActivity {
                 new Response.Listener<JSONArray>() {
                     @Override
                     public void onResponse( JSONArray response ) {
-                        ProductOutlook product = new ProductOutlook();
+                        HelperClass_ProductOutlook product = new HelperClass_ProductOutlook();
                         try {
                             JSONArray jsonArray = response.getJSONArray(0);
                             product.setCategory(jsonArray.get(0).toString());
@@ -165,4 +201,80 @@ public class ViewItem extends AppCompatActivity {
                 });
         requestQueue.add(jsonArrayRequest);
     }
+
+
+    @Override
+    public void onClick( View v ) {
+
+        switch(v.getId())
+        {
+            case R.id.view_item_iv_back:
+            {
+                finish();
+                break;
+            }
+            case R.id.view_item_addToCart:
+            {
+                if(!checkConnection())
+                {
+
+                    layoutId = findViewById(R.id.view_item_layoutID);
+                    Snackbar.make(layoutId,"No Internet Connection, please try again later",Snackbar.LENGTH_SHORT).show();
+
+                }
+                else
+                {
+                    SharedPreferences sp;
+                    sp = getSharedPreferences(Constants.sharedPref, MODE_PRIVATE);
+                    final String userCartId = sp.getString(Constants.sp_usercart_key,"");
+                    refDatabase = FirebaseDatabase.getInstance().getReference("UserItems");
+
+                    final String productId = getIntent().getStringExtra("itemId");
+
+                    refDatabase.addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange( @NonNull DataSnapshot snapshot ) {
+
+                            HelperClass_cart cart;
+                            cart = snapshot.child(userCartId).getValue(HelperClass_cart.class);
+
+                            int noOfItems = cart.number_of_items;
+                            List<String>user_items = new ArrayList<>();
+
+                            if(noOfItems == 0 )
+                            {
+                                user_items.add(productId);
+                                noOfItems++;
+                            }
+                            else
+                            {
+                                user_items = cart.products;
+                                user_items.add(productId);
+                                noOfItems++;
+                            }
+
+                            cart.number_of_items = noOfItems;
+                            cart.products = user_items;
+                            refDatabase.child(userCartId).setValue(cart);
+
+                            layoutId = findViewById(R.id.view_item_layoutID);
+                            Snackbar.make(layoutId,"Item added to cart",Snackbar.LENGTH_SHORT).show();
+
+                        }
+
+                        @Override
+                        public void onCancelled( @NonNull DatabaseError error ) {
+
+                        }
+                    });
+
+
+                }
+                break;
+
+            }
+
+        }
     }
+}
+

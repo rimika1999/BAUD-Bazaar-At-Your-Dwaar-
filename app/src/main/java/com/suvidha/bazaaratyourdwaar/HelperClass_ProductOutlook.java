@@ -1,13 +1,13 @@
 package com.suvidha.bazaaratyourdwaar;
 
-public class ProductOutlook {
+public class HelperClass_ProductOutlook {
 
     private String category,subcategory,name,current_price,raw_price,currency,discount,likes_count,is_new,brand,brand_url,codcountry,variation_0_color,variation_1_color,variation_0_thumbnail,variation_0_image,variation_1_thumbnail,variation_1_image,image_url,url,id,model;
 
-    public ProductOutlook() {
+    public HelperClass_ProductOutlook() {
     }
 
-    public ProductOutlook( String category, String subcategory, String name, String current_price, String raw_price, String currency, String discount, String likes_count, String is_new, String brand, String brand_url, String codcountry, String variation_0_color, String variation_1_color, String variation_0_thumbnail, String variation_0_image, String variation_1_thumbnail, String variation_1_image, String image_url, String url, String id, String model ) {
+    public HelperClass_ProductOutlook( String category, String subcategory, String name, String current_price, String raw_price, String currency, String discount, String likes_count, String is_new, String brand, String brand_url, String codcountry, String variation_0_color, String variation_1_color, String variation_0_thumbnail, String variation_0_image, String variation_1_thumbnail, String variation_1_image, String image_url, String url, String id, String model ) {
         this.category = category;
         this.subcategory = subcategory;
         this.name = name;

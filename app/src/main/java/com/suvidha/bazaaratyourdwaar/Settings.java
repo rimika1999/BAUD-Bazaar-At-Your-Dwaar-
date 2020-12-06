@@ -129,14 +129,7 @@ public class Settings extends AppCompatActivity implements View.OnClickListener{
         {
             case R.id.setting_iv_back:
             {
-                if(!checkConnection())
-                {
-                    Snackbar.make(layoutId,"No Internet Connection, please try again later",Snackbar.LENGTH_SHORT).show();
-                }
-                else
-                {
-                    finish();
-                }
+                finish();
                 break;
             }
             case R.id.settings_profileupdate_button:
