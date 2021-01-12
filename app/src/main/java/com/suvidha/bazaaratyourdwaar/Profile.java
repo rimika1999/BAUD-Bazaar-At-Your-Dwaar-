@@ -15,8 +15,6 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.text.Layout;
-import android.util.Log;
 import android.util.Patterns;
 import android.view.View;
 import android.widget.Button;
@@ -86,7 +84,7 @@ public class Profile extends AppCompatActivity implements View.OnClickListener{
         profile_pic = findViewById(R.id.profile_pic);
         edit_profilepic = findViewById(R.id.edit_profilepic);
 
-        imageview_back = findViewById(R.id.profile_iv_back);
+        imageview_back = findViewById(R.id.signup_iv_back);
         profile_button = findViewById(R.id.update_profile_button);
         profilepic_profile = findViewById(R.id.profile_pic);
 
@@ -306,7 +304,7 @@ public class Profile extends AppCompatActivity implements View.OnClickListener{
     public void onClick( View v ) {
         switch (v.getId())
         {
-            case R.id.profile_iv_back:
+            case R.id.signup_iv_back:
             {
                 if(!checkConnection())
                 {

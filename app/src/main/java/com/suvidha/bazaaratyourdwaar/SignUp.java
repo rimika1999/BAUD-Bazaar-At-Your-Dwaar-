@@ -53,7 +53,7 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
     EditText email,username,password,confirmPassword,phone;
     Dialog dialog_progress,dialog_noConnection;
     String verificationID;
-    Boolean otp_verification;
+    Boolean otp_verification = false;
     LinearLayout layoutId;
 
 
@@ -76,7 +76,7 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
         mAuth = FirebaseAuth.getInstance();
 
         textView_login = findViewById(R.id.signup_tv_login);
-        imageView_back = findViewById(R.id.profile_iv_back);
+        imageView_back = findViewById(R.id.signup_iv_back);
         signUp_button = findViewById(R.id.signUp_button);
         email = findViewById(R.id.signup_et_email);
         phone = findViewById(R.id.signup_et_phone);
@@ -90,9 +90,6 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
         textView_login.setOnClickListener(this);
         imageView_back.setOnClickListener(this);
         signUp_button.setOnClickListener(this);
-
-        otp_verification = false;
-
 
         if(!checkConnection())
         {
@@ -123,9 +120,10 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
                     @Override
                     public void onClick( View v ) {
                         String verificationCode = OTP_code.getText().toString();
-                        if(!verificationID.isEmpty())
+                        if(!verificationCode.isEmpty())
                         {
                             PhoneAuthCredential credential= PhoneAuthProvider.getCredential(verificationID,verificationCode);
+
                             signInWithPhoneAuthCredential(credential);
                         }
                         else
@@ -133,6 +131,7 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
                             dialog_otp.dismiss();
                             return;
                         }
+
                         dialog_otp.dismiss();
 
                     }
@@ -234,7 +233,7 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
         Log.d("TAG","Request sent for otp");
         //firebase class -phone authentication
         PhoneAuthProvider.getInstance().verifyPhoneNumber(
-                phoneNumber,60L, TimeUnit.SECONDS,this,mCallBacks);
+                phoneNumber,60L, TimeUnit.MINUTES,this,mCallBacks);
     }
 
     private boolean registerUser()
@@ -344,7 +343,7 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
     public void onClick(View view) {
         switch (view.getId())
         {
-            case R.id.profile_iv_back:
+            case R.id.signup_iv_back:
             {
                 finish();
                 break;
@@ -397,11 +396,54 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
                                 return;
                             }
 
-                            if(registerUser()) {
+                            DatabaseReference UserDatabase;
+
+                            String userIdentification_key;
+                            String Username = username.getText().toString();
+                            String Password = password.getText().toString();
+                            String Email = email.getText().toString();
+                            String Phone = phone.getText().toString();
+                            String encodedPass = null;
+                            try {
+                                encodedPass = hash256(Password);
+                            } catch (NoSuchAlgorithmException e) {
+                                e.printStackTrace();
+                            }
+
+
+                            UserDatabase = FirebaseDatabase.getInstance().getReference();
+
+
+                            userIdentification_key=UserDatabase.child("Users").push().getKey();
+                            HelperClass_User user_helperclass = new HelperClass_User(Username, Email,Phone, encodedPass,userIdentification_key,null,null);
+                            UserDatabase.child("Users").child(userIdentification_key).setValue(user_helperclass);
+
+                            SharedPreferences.Editor sp_editor = sp.edit();
+                            sp_editor.putString(Constants.sp_key,userIdentification_key);
+                            sp_editor.commit();
+
+                            String user_profileKey,user_cartKey;
+                            user_profileKey = UserDatabase.child("UserProfile").push().getKey();
+                            user_cartKey = UserDatabase.child("UserItems").push().getKey();
+
+                            HelperClass_cart userCart = new HelperClass_cart(null,0);
+                            UserDatabase.child("UserItems").child(user_cartKey).setValue(userCart);
+
+                            HelperClass_Profile user_profileDB = new HelperClass_Profile(user_profileKey,userIdentification_key,null,null,null,null,null,null,null,null,user_cartKey);
+                            UserDatabase.child("UserProfile").child(user_profileKey).setValue(user_profileDB);
+
+                            sp_editor.putString(Constants.sp_userkey,user_profileKey);
+                            sp_editor.putString(Constants.sp_usercart_key,user_cartKey);
+                            sp_editor.commit();
+
+
+                            startActivity(new Intent(context,Login.class));
+                            finish();
+
+                            /*if(registerUser()) {
 
                                 //if email verified
                                 FirebaseUser User=mAuth.getCurrentUser();
-
 
                                 if(otp_verification)
                                 {
@@ -452,7 +494,7 @@ public class SignUp extends AppCompatActivity implements View.OnClickListener{
 
                                 }
 
-                            }
+                            }*/
                         }
 
                         @Override

@@ -154,32 +154,21 @@ public class Login extends AppCompatActivity implements View.OnClickListener{
 
                 for(DataSnapshot dataSnapshot : snapshot.getChildren())
                 {
-                    String dbuserid = dataSnapshot.child("email").getValue(String.class);
                     String dbuserphone = dataSnapshot.child("phone").getValue(String.class);
                     String dbpassword = dataSnapshot.child("password").getValue(String.class);
 
-                    if(dbuserid.equals(userId) || dbuserphone.equals(userId))
+                    if( dbuserphone.equals(userId) && dbpassword.equals(hash_password) )
                     {
-                        if(dbpassword.equals(hash_password))
-                        {
-                            dialog_progress.dismiss();
-                            SimpleDateFormat sdf = new SimpleDateFormat("yyyy.MM.dd G 'at' HH:mm:ss z");
-                            String currentDateandTime = sdf.format(new Date());
-                            String id=dataSnapshot.child("identificationKey").getValue().toString();
+                        dialog_progress.dismiss();
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy.MM.dd G 'at' HH:mm:ss z");
+                        String currentDateandTime = sdf.format(new Date());
+                        String id=dataSnapshot.child("identificationKey").getValue().toString();
 
-                            ref.child(id).child("logIn_time").setValue(currentDateandTime);
-                            userFound=true;
-                            break;
-                        }
-                        else
-                        {
-                            LinearLayout linearLayout = findViewById(R.id.login_layoutID);
-                            dialog_progress.dismiss();
-                            Snackbar.make(linearLayout,"Username or password is incorrect",Snackbar.LENGTH_LONG).show();
-                            return;
-                        }
+                        ref.child(id).child("logIn_time").setValue(currentDateandTime);
+                        userFound=true;
+                        break;
                     }
-                    else
+                    else if(dbuserphone.equals(userId) || dbpassword.equals(hash_password))
                     {
                         LinearLayout linearLayout = findViewById(R.id.login_layoutID);
                         dialog_progress.dismiss();
